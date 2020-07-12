@@ -1,45 +1,42 @@
 ﻿using NAudio.Wave;
+using Serilog;
 using System;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
 
-namespace WeFax
+namespace net.sictransit.wefax
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Send(@"C:\Users\micke\Dropbox\GC\!hidden\GC8WD6Q - WEFAX (bonus #3)\calibration.png", new BCH("GC8WD6Q", "MST", DateTime.UtcNow, "JO89", "d: 5102 m, b: 37.07 deg"));
-            Send(@"C:\Users\micke\Dropbox\GC\!hidden\GC8WD6Q - WEFAX (bonus #3)\map.png");
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .CreateLogger();
+
+            Send(@"img/EIA_Resolution_Chart_1956.png", new BCH("GC8WD6Q", "MST", DateTime.UtcNow, "JO89", "d: 1000 m, b: 90.00 deg"));            
         }
 
         private static void Send(string filename, BCH bch = null)
         {
             var fax = new Fax(16000);
 
-            using var original = Bitmap.FromFile(filename);
+            Log.Information($"loading: {filename}");
 
-            var borderWidth = (int)fax.Resolution / 20;
-            var imageWidth = (int)fax.Resolution - borderWidth;
+            using var original = Image.FromFile(filename);
 
-            var scalingFactor = (fax.Resolution - borderWidth) / original.Width;
+            Log.Information($"original image: {original.Width}x{original.Height}");
 
-            var faxWidth = borderWidth + imageWidth;
-            var faxHeight = original.Height * scalingFactor;
+            var scalingFactor = fax.ImageWidth / (float)original.Width;
 
-            using var scaled = new Bitmap(faxWidth, (int)Math.Round(faxHeight));
+            using var scaled = new Bitmap(fax.ImageWidth, (int)Math.Round(original.Height * scalingFactor));
             using var graphics = Graphics.FromImage(scaled);
-            using var whiteBrush = new SolidBrush(Color.White);
-            graphics.FillRectangle(whiteBrush, 0, 0, scaled.Width, scaled.Height);
 
             graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            graphics.DrawImage(original, (int)borderWidth, 0, (int)imageWidth, (int)faxHeight);
+            graphics.DrawImage(original, 0, 0, scaled.Width, scaled.Height);
 
-            scaled.Save("scaled.png", ImageFormat.Png);
+            Log.Information($"scaled image: {scaled.Width}x{scaled.Height}");
 
             var wavFilename = Path.Combine(Path.GetDirectoryName(filename), $"{Path.GetFileNameWithoutExtension(filename)}.wav");
 
@@ -58,11 +55,16 @@ namespace WeFax
                 var header = fax.GetBCH(bch);
 
                 writer.WriteSamples(header, 0, header.Length);
+
+                var debug = fax.GetBCH(bch, true);
+
+                writer.WriteSamples(debug, 0, debug.Length);
+
             }
 
             for (int y = 0; y < scaled.Height; y++)
             {
-                var pixels = Enumerable.Range(0, scaled.Width).Select(x => scaled.GetPixel(x, y).GetBrightness() * 2d - 1).ToArray();
+                var pixels = Enumerable.Range(0, scaled.Width).Select(x => scaled.GetPixel(x, y).GetBrightness() * 2f - 1).ToArray();
 
                 var samples = fax.GetLine(pixels);
 
@@ -73,7 +75,7 @@ namespace WeFax
 
             writer.WriteSamples(stop, 0, stop.Length);
 
-            Console.WriteLine($"{scaled.Width}x{scaled.Height}");
+            Log.Information($"wrote: {wavFilename}");
         }
     }
 }

@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace WeFax
+namespace net.sictransit.wefax
 {
-  //1- Satellite name(8 characters)          NOAA-11 
-  //2- Spectral band(3 characters)          DIR
-  //3- Date(YYMMDD)     (6 characters)          910125 
-  //4- Time(HHMM)       (4 characters)          1315 
-  //5- Sector name(4 Characters)          W020
-  //6- Open(25 characters)         non-standard info
+    //1- Satellite name(8 characters)          NOAA-11 
+    //2- Spectral band(3 characters)          DIR
+    //3- Date(YYMMDD)     (6 characters)          910125 
+    //4- Time(HHMM)       (4 characters)          1315 
+    //5- Sector name(4 Characters)          W020
+    //6- Open(25 characters)         non-standard info
 
 
     class BCH

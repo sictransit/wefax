@@ -1,37 +1,37 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace WeFax
+namespace net.sictransit.wefax
 {
     class Fax
     {
-        private const int Carrier = 1600;
         private readonly int lineLength;
         private readonly double dt;
+        private readonly int carrier;
         private readonly int deviation;
-        private readonly int ioc;
-        
+        private readonly int resolution;
+        private readonly float[] whiteBar;
+
         private double time = 0;
 
-        public Fax(int sampleRate = 8000, int deviation = 400, int ioc = 576)
+        public Fax(int sampleRate = 8000, int carrier = 1600, int deviation = 400, int ioc = 576)
         {
             SampleRate = sampleRate;
+            this.carrier = carrier;
             this.deviation = deviation;
-            this.ioc = ioc;
-            this.lineLength = sampleRate / 2;
-            this.dt = Math.PI * 2 / sampleRate;
+            lineLength = sampleRate / 2;
+            dt = Math.PI * 2 / sampleRate;
+            resolution = (int)(Math.PI * ioc);
+            whiteBar = Enumerable.Repeat(1f, resolution / 20).ToArray();
         }
 
-        public double Resolution => (Math.PI * ioc);
+        public int ImageWidth => resolution - whiteBar.Length;
 
         public int SampleRate { get; }
 
         public float[] GetPhasing()
         {
-            var white = lineLength / 20;            
-            var modulation = Enumerable.Range(0, lineLength).Select(x => x < white ? 1d : -1d).ToArray();
+            var modulation = Enumerable.Range(0, ImageWidth).Select(_ => -1f).ToArray();
 
             return Enumerable.Range(0, 20 * 2).Select(_ => GetLine(modulation)).SelectMany(x => x).ToArray();
         }
@@ -46,53 +46,52 @@ namespace WeFax
             return GetSquareWave(450, 5);
         }
 
-        public float[] GetBCH(BCH bch)
+        public float[] GetBCH(BCH bch, bool debug = false)
         {
-            var white = Enumerable.Range(0, lineLength / 20).Select(_ => 1d).ToArray();
+            var bitLength = 4;
 
-            var bitLength = (lineLength - white.Length) / bch.Binary.Count() ;
+            var one = Enumerable.Repeat(1f, bitLength).ToArray();
+            var zero = Enumerable.Repeat(-1f, bitLength).ToArray();
 
-            var one = Enumerable.Repeat(1d, bitLength).ToArray();
-            var zero = Enumerable.Repeat(-1d, bitLength).ToArray();
+            var bin = debug
+                ? Enumerable.Range(0, bch.Binary.Count()).Select(x => x % 2 == 0 ? zero : one).SelectMany(x => x).ToArray()
+                : bch.Binary.Select(x => x == 1 ? one : zero).SelectMany(x => x).ToArray();
 
-            var bin = bch.Binary.Select(x => x == 1 ? one : zero).SelectMany(x => x).ToArray();            
+            var padding = new float[ImageWidth - bin.Length];
 
-            var padding = new double[lineLength - white.Length - bin.Length];
-
-            return Enumerable.Range(0, bitLength / 4).Select(_ => GetLine(white.Concat(bin).Concat(padding).ToArray())).SelectMany(x => x).ToArray();
+            return Enumerable.Range(0, bitLength).Select(_ => GetLine(bin.Concat(padding).ToArray())).SelectMany(x => x).ToArray();
         }
 
         private float[] GetSquareWave(int frequency, int duration)
         {
-            var modulation = Enumerable.Range(0, frequency).Select(x => x % 2 == 0 ? -1d : 1d).ToArray();            
+            var modulation = Enumerable.Range(0, frequency).Select(x => x % 2 == 0 ? -1f : 1f).ToArray();
 
-            return Enumerable.Range(0, duration * 2).Select(_ => GetLine(modulation)).SelectMany(x => x).ToArray();
+            return Enumerable.Range(0, duration * 2).Select(_ => GetLine(modulation, false)).SelectMany(x => x).ToArray();
         }
 
-        public float[] GetLine(double[] pixels = null)
+        public float[] GetLine(float[] pixels = null, bool bar = true)
         {
-            //time = 0;
 
             if (pixels == null)
             {
-                pixels = new double[1];
+                pixels = new float[0];
             }
 
-            var lineLength = SampleRate / 2;
+            var modulation = bar ? whiteBar.Concat(pixels).ToArray() : pixels;
 
-            var interpolationFactor = (double)pixels.Length / lineLength;
+            var interpolationFactor = (double)modulation.Length / lineLength;
 
             var line = new float[lineLength];
 
             for (int i = 0; i < lineLength; i++)
             {
-                var pixel = (int)(i * interpolationFactor);                
+                var pixel = (int)(i * interpolationFactor);
 
-                var frequency = Carrier + deviation * pixels[pixel];
+                var frequency = carrier + deviation * modulation[pixel];
 
                 time += dt * frequency;
 
-                line[i] = (float)Math.Sin(time);                
+                line[i] = (float)Math.Sin(time);
             }
 
             return line;
