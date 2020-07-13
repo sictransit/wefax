@@ -12,6 +12,7 @@ namespace net.sictransit.wefax
         static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
                 .WriteTo.Console()
                 .CreateLogger();
 
@@ -56,10 +57,9 @@ namespace net.sictransit.wefax
 
                 writer.WriteSamples(header, 0, header.Length);
 
-                var debug = fax.GetBCH(bch, true);
+                //var debug = fax.GetBCH(bch, true);
 
-                writer.WriteSamples(debug, 0, debug.Length);
-
+                //writer.WriteSamples(debug, 0, debug.Length);
             }
 
             for (int y = 0; y < scaled.Height; y++)

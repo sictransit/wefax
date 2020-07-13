@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Linq;
+using System.Text;
 
 namespace net.sictransit.wefax
 {
@@ -48,13 +50,31 @@ namespace net.sictransit.wefax
 
         public float[] GetBCH(BCH bch, bool debug = false)
         {
+            Log.Information($"encoding BCH: [{bch.Text}]");
+
+            if (Log.IsEnabled(Serilog.Events.LogEventLevel.Debug))
+            {
+                var binary = bch.Binary.ToArray();
+                var bytes = new byte[binary.Length / 8];
+                for (int i = 0; i < bch.Text.Length; i++)
+                {
+                    var chunk = new string(binary.Skip(8 * i).Take(8).Select(x => x == 1 ? '1' : '0').ToArray());
+                    bytes[i] = Convert.ToByte(chunk, 2);
+
+                    
+                }
+
+                Log.Debug($"decoded BCH: [{Encoding.ASCII.GetString(bytes)}]");
+            }
+            
+
             var bitLength = 4;
 
             var one = Enumerable.Repeat(1f, bitLength).ToArray();
             var zero = Enumerable.Repeat(-1f, bitLength).ToArray();
 
             var bin = debug
-                ? Enumerable.Range(0, bch.Binary.Count()).Select(x => x % 2 == 0 ? zero : one).SelectMany(x => x).ToArray()
+                ? Enumerable.Range(0, bch.Binary.Count()).Select(x => x / 8 % 2 == 0 ? zero : one).SelectMany(x => x).ToArray()
                 : bch.Binary.Select(x => x == 1 ? one : zero).SelectMany(x => x).ToArray();
 
             var padding = new float[ImageWidth - bin.Length];
