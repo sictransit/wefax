@@ -16,7 +16,7 @@ namespace net.sictransit.wefax
                 .WriteTo.Console()
                 .CreateLogger();
 
-            Send(@"img/EIA_Resolution_Chart_1956.png", new BCH("GC8WD6Q", "MST", DateTime.UtcNow, "JO89", "d: 1000 m, b: 90.00 deg"));            
+            Send(@"img/EIA_Resolution_Chart_1956.png", new BCH("GC8WD6Q", "MST", DateTime.UtcNow, "JO89", "d: 1000 m, b: 90.00 deg"));
         }
 
         private static void Send(string filename, BCH bch = null)

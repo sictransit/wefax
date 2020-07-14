@@ -55,16 +55,14 @@ namespace net.sictransit.wefax
             if (Log.IsEnabled(Serilog.Events.LogEventLevel.Debug))
             {
                 var binary = bch.Binary.ToArray();
-                var bytes = new byte[binary.Length / 8];
+                
                 for (int i = 0; i < bch.Text.Length; i++)
                 {
                     var chunk = new string(binary.Skip(8 * i).Take(8).Select(x => x == 1 ? '1' : '0').ToArray());
-                    bytes[i] = Convert.ToByte(chunk, 2);
+                    var b = Convert.ToByte(chunk, 2);
 
-                    
+                    Log.Debug($"decoded BCH: {(char)b} ({string.Concat(chunk.Select(x=>x.ToString()).ToArray())})");
                 }
-
-                Log.Debug($"decoded BCH: [{Encoding.ASCII.GetString(bytes)}]");
             }
             
 
