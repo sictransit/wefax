@@ -6,8 +6,8 @@ It just scans pixels, transforming to a signal with a frequency shift. Optionall
 
 ## features
 
-None! I wrote this for a Geocaching project, but feel free to fork or submit a pull request.
+None! I wrote this for an amateur radio Geocaching project, but feel free to fork or submit a pull request.
 
 ## tests
 
-fldigi http://www.w1hkj.com/ is able to decode the generated audio file, to something that looks very similar to the encoded image.
+None, but at least [fldigi](http://www.w1hkj.com/) is able to decode the generated audio file, to something that looks very similar to the encoded image.
