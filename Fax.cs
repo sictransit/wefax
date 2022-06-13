@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace net.sictransit.wefax
 {
-    class Fax
+    internal class Fax
     {
         private readonly int lineLength;
         private readonly double dt;

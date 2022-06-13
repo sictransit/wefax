@@ -8,9 +8,9 @@ using System.Linq;
 
 namespace net.sictransit.wefax
 {
-    class Program
+    public static class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -25,11 +25,11 @@ namespace net.sictransit.wefax
                           throw new FileNotFoundException(o.SourceImage);
                       }
 
-                      Send(o.SourceImage, new BinaryCodedHeader(o.SatelliteName, o.SectorName, o.Date, o.Time, o.SectorName, o.Open));
-                  });                      
+                      Fax(o.SourceImage, new BinaryCodedHeader(o.SatelliteName, o.SectorName, o.Date, o.Time, o.SectorName, o.Open));
+                  });
         }
 
-        private static void Send(string filename, BinaryCodedHeader bch)
+        private static void Fax(string filename, BinaryCodedHeader bch)
         {
             var fax = new Fax(16000);
 

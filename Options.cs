@@ -2,7 +2,7 @@
 
 namespace net.sictransit.wefax
 {
-    public class Options
+    internal class Options
     {
         [Option(Required = false, Default = "img/EIA_Resolution_Chart_1956.png", HelpText = "source image file to fax")]
         public string SourceImage { get; set; }
