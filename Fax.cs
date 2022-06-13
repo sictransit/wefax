@@ -47,7 +47,7 @@ namespace net.sictransit.wefax
             return GetSquareWave(450, 5);
         }
 
-        public float[] GetBCH(BCH bch, bool debug = false)
+        public float[] GetBCH(BinaryCodedHeader bch, bool debug = false)
         {
             Log.Information($"encoding BCH: [{bch.Text}]");
 
