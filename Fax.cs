@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace net.sictransit.wefax
 {
-    class Fax
+    internal class Fax
     {
         private readonly int lineLength;
         private readonly double dt;
@@ -47,7 +47,7 @@ namespace net.sictransit.wefax
             return GetSquareWave(450, 5);
         }
 
-        public float[] GetBCH(BCH bch, bool debug = false)
+        public float[] GetBCH(BinaryCodedHeader bch, bool debug = false)
         {
             Log.Information($"encoding BCH: [{bch.Text}]");
 
@@ -89,7 +89,7 @@ namespace net.sictransit.wefax
         {
             if (pixels == null)
             {
-                pixels = new float[0];
+                pixels = Array.Empty<float>();
             }
 
             var modulation = bar ? whiteBar.Concat(pixels).ToArray() : pixels;

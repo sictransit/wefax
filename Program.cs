@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using CommandLine;
+using NAudio.Wave;
 using Serilog;
 using System;
 using System.Drawing;
@@ -7,19 +8,28 @@ using System.Linq;
 
 namespace net.sictransit.wefax
 {
-    class Program
+    public static class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
                 .CreateLogger();
 
-            Send(@"img/EIA_Resolution_Chart_1956.png", new BCH("GC8WD6Q", "MST", DateTime.UtcNow, "JO89", "d: 1000 m, b: 90.00 deg"));
+            Parser.Default.ParseArguments<Options>(args)
+                  .WithParsed(o =>
+                  {
+                      if (!File.Exists(o.SourceImage))
+                      {
+                          throw new FileNotFoundException(o.SourceImage);
+                      }
+
+                      Fax(o.SourceImage, new BinaryCodedHeader(o.SatelliteName, o.SectorName, o.Date, o.Time, o.SectorName, o.Open));
+                  });
         }
 
-        private static void Send(string filename, BCH bch = null)
+        private static void Fax(string filename, BinaryCodedHeader bch)
         {
             var fax = new Fax(16000);
 
@@ -51,15 +61,11 @@ namespace net.sictransit.wefax
 
             writer.WriteSamples(phasing, 0, phasing.Length);
 
-            if (bch != null)
+            if (!bch.IsEmpty)
             {
                 var header = fax.GetBCH(bch);
 
                 writer.WriteSamples(header, 0, header.Length);
-
-                //var debug = fax.GetBCH(bch, true);
-
-                //writer.WriteSamples(debug, 0, debug.Length);
             }
 
             for (int y = 0; y < scaled.Height; y++)
