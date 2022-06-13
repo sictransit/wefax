@@ -89,7 +89,7 @@ namespace net.sictransit.wefax
         {
             if (pixels == null)
             {
-                pixels = new float[0];
+                pixels = Array.Empty<float>();
             }
 
             var modulation = bar ? whiteBar.Concat(pixels).ToArray() : pixels;

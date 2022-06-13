@@ -32,7 +32,7 @@ namespace net.sictransit.wefax
 
         public bool IsEmpty => string.IsNullOrWhiteSpace(Text);
 
-        private string TrimClipAndPad(string s, int length)
+        private static string TrimClipAndPad(string s, int length)
         {
             var trimmed = s.Trim();
 
