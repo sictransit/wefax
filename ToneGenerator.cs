@@ -4,50 +4,46 @@ using System.Linq;
 
 namespace net.sictransit.wefax
 {
-    internal class Fax
+    public class ToneGenerator
     {
-        private readonly int lineLength;
-        private readonly double dt;
+        private readonly int imageWidth;
+        private readonly float[] whiteBar;
         private readonly int carrier;
         private readonly int deviation;
-        private readonly int resolution;
-        private readonly float[] whiteBar;
+        private readonly int lineLength;
 
+        private readonly double dt;
         private double time = 0;
 
-        public Fax(int sampleRate = 8000, int carrier = 1600, int deviation = 400, int ioc = 576)
+        public ToneGenerator(int imageWidth, float[] whiteBar, int sampleRate, int carrier, int deviation)
         {
-            SampleRate = sampleRate;
+            this.imageWidth = imageWidth;
+            this.whiteBar = whiteBar;
             this.carrier = carrier;
             this.deviation = deviation;
+
             lineLength = sampleRate / 2;
             dt = Math.PI * 2 / sampleRate;
-            resolution = (int)(Math.PI * ioc);
-            whiteBar = Enumerable.Repeat(1f, resolution / 20).ToArray();
         }
 
-        public int ImageWidth => resolution - whiteBar.Length;
-
-        public int SampleRate { get; }
-
-        public float[] GetPhasing()
+        public float[] GeneratePhasing()
         {
-            var modulation = Enumerable.Range(0, ImageWidth).Select(_ => -1f).ToArray();
+            var modulation = Enumerable.Range(0, imageWidth).Select(_ => -1f).ToArray();
 
-            return Enumerable.Range(0, 20 * 2).Select(_ => GetLine(modulation)).SelectMany(x => x).ToArray();
+            return Enumerable.Range(0, 20 * 2).Select(_ => GenerateLine(modulation)).SelectMany(x => x).ToArray();
         }
 
-        public float[] GetStart()
+        public float[] GenerateStart()
         {
-            return GetSquareWave(300, 5);
+            return GenerateSquareWave(300, 5);
         }
 
-        public float[] GetStop()
+        public float[] GenerateStop()
         {
-            return GetSquareWave(450, 5);
+            return GenerateSquareWave(450, 5);
         }
 
-        public float[] GetBCH(BinaryCodedHeader bch, bool debug = false)
+        public float[] GenerateBCH(BinaryCodedHeader bch, bool debug = false)
         {
             Log.Information($"encoding BCH: [{bch.Text}]");
 
@@ -73,19 +69,12 @@ namespace net.sictransit.wefax
                 ? Enumerable.Range(0, bch.Binary.Count()).Select(x => x / 8 % 2 == 0 ? zero : one).SelectMany(x => x).ToArray()
                 : bch.Binary.Select(x => x == 1 ? one : zero).SelectMany(x => x).ToArray();
 
-            var padding = new float[ImageWidth - bin.Length];
+            var padding = new float[imageWidth - bin.Length];
 
-            return Enumerable.Range(0, bitLength).Select(_ => GetLine(bin.Concat(padding).ToArray())).SelectMany(x => x).ToArray();
+            return Enumerable.Range(0, bitLength).Select(_ => GenerateLine(bin.Concat(padding).ToArray())).SelectMany(x => x).ToArray();
         }
 
-        private float[] GetSquareWave(int frequency, int duration)
-        {
-            var modulation = Enumerable.Range(0, frequency).Select(x => x % 2 == 0 ? -1f : 1f).ToArray();
-
-            return Enumerable.Range(0, duration * 2).Select(_ => GetLine(modulation, false)).SelectMany(x => x).ToArray();
-        }
-
-        public float[] GetLine(float[] pixels = null, bool bar = true)
+        public float[] GenerateLine(float[] pixels = null, bool bar = true)
         {
             if (pixels == null)
             {
@@ -110,6 +99,13 @@ namespace net.sictransit.wefax
             }
 
             return line;
+        }
+
+        private float[] GenerateSquareWave(int frequency, int duration)
+        {
+            var modulation = Enumerable.Range(0, frequency).Select(x => x % 2 == 0 ? -1f : 1f).ToArray();
+
+            return Enumerable.Range(0, duration * 2).Select(_ => GenerateLine(modulation, false)).SelectMany(x => x).ToArray();
         }
     }
 }
