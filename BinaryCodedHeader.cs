@@ -11,7 +11,7 @@ namespace net.sictransit.wefax
     //5- Sector name(4 Characters)          W020
     //6- Open(25 characters)         non-standard info
 
-    internal class BinaryCodedHeader
+    public class BinaryCodedHeader
     {
         private readonly string satelliteName;
         private readonly string spectralBand;
